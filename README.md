@@ -19,7 +19,7 @@ The main focus of the project is the **implementation and integration of fundame
 * Add a new dealership
 * Search for a dealership
 * Display the list of dealerships
-* Maintain a separate order priority queue for each dealership
+* Maintain a separate priority queue for each dealership
 
 ### Service Management
 
@@ -146,9 +146,7 @@ This includes:
 
 ## Agency-Service Relationship
 
-The system also maintains relationships between dealerships and services.
-
-These relationships are represented using:
+The system maintains relationships between dealerships and services using:
 
 ```cpp
 struct AgencyServiceNode
@@ -188,6 +186,8 @@ The order with the highest immediacy level is kept at the root of the heap.
 
 When the order list is requested, orders are repeatedly removed from the heap and displayed until the priority queue becomes empty.
 
+> **Note:** The current implementation prioritizes orders only by immediacy level. Timestamp-based tie-breaking for orders with equal urgency has not yet been implemented.
+
 ## Supported Commands
 
 ### Agency Commands
@@ -218,14 +218,12 @@ list services from <Service_Name>
 ### Order Commands
 
 ```text
-order <Service_Name> to <Agency_Name>
-      by <Customer_Name>
-      with <Immediacy_Level>
+order <Service_Name> to <Agency_Name> by <Customer_Name> with <Immediacy_Level>
 
 list orders <Agency_Name>
 ```
 
-> Service deletion and complete command parsing are planned improvements.
+> **Note:** The current source code does not yet contain a complete command-line parser. The listed commands describe the intended system operations and corresponding functionality.
 
 ## Example Service Hierarchy
 
@@ -266,7 +264,7 @@ A typical workflow can look like:
 > list orders Tehran_Agency
 ```
 
-The orders are processed according to their immediacy levels using the Max Heap.
+Orders are processed according to their immediacy levels using the Max Heap.
 
 ## Design Goals
 
@@ -328,13 +326,12 @@ the project implements its own priority queue using a Max Heap.
 ```text
 automotive-dealership-management-system/
 │
-├── main.cpp
+├── S4.cpp
 ├── maxheap.cpp
-├── README.md
-└── ...
+└── README.md
 ```
 
-The source code is organized around the main entities and data structures used by the system.
+`maxheap.cpp` contains the custom Max Heap and priority queue implementation, while `S4.cpp` contains the dealership, service, and order management logic.
 
 ## Running the Project
 
@@ -345,12 +342,15 @@ git clone https://github.com/Masoumeh-Ostvar/automotive-dealership-management-sy
 cd automotive-dealership-management-system
 ```
 
-Build and run the project according to the C++ build configuration used in the repository.
-
-For example:
+Compile:
 
 ```bash
-g++ main.cpp -o main
+g++ S4.cpp -o main
+```
+
+Run:
+
+```bash
 ./main
 ```
 
