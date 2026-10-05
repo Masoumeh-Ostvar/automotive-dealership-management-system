@@ -1,87 +1,78 @@
-# automotive-dealership-management-system
-C++ implementation of an automotive service management system using custom Linked Lists, Trees, and Max Heaps.
-
 # Automotive Dealership Management System
 
-A command-line management system for organizing automotive dealerships, hierarchical vehicle services, and customer service orders.
-
-The main focus of this project is the **implementation and integration of fundamental data structures from scratch** to model a real-world service management problem.
+A C++ implementation of an automotive dealership management system using custom linked data structures and a manually implemented Max Heap-based priority queue.
 
 ## Overview
 
-The system is designed for an automotive company that manages multiple dealerships and the services they provide to customers.
+This project implements a management system for automotive dealerships, hierarchical vehicle services, and customer service orders.
 
-The company can define services and organize them into an arbitrary hierarchy of sub-services. Dealerships can offer different services, while customers can submit service orders to specific dealerships.
+The system models a company that manages multiple dealerships and the services they provide. Services can be organized into multiple levels of sub-services, while dealerships can offer different services to their customers.
 
-Each dealership maintains its pending orders according to their urgency and submission time using a **Max Heap-based priority queue**.
+Each dealership maintains its own collection of customer orders using a custom **Max Heap** based on service urgency.
 
-### Example Service Hierarchy
-
-```text
-Body Repair
-├── Bumper Replacement
-├── Bodywork
-├── Tire Services
-│   ├── Tire Replacement
-│   └── Tire Repair
-└── Interior Services
-```
-
-Services are not restricted to a fixed number of hierarchical levels.
+The main focus of the project is the **implementation and integration of fundamental data structures from scratch** to solve a real-world management problem.
 
 ## Key Features
 
-### Agency Management
+### Dealership Management
 
 * Add a new dealership
+* Search for a dealership
 * Display the list of dealerships
+* Maintain a separate order priority queue for each dealership
 
 ### Service Management
 
 * Add a new main service
-* Add a sub-service to an existing service
-* Display all services and their complete hierarchy
-* Display the sub-services of a specific service
+* Add sub-services to existing services
+* Support multiple levels of nested services
+* Search services through the hierarchy
+* Display all services and their sub-services
+* Display sub-services of a specific service
 * Associate services with dealerships
-* Remove services from dealerships
-* Automatically remove services and their descendants when they are no longer offered by any dealership
 
 ### Order Management
 
-Customers can submit an order for a service offered by a specific dealership.
+Customers can submit service orders to a specific dealership.
 
-Each order has an urgency level:
+Each order contains:
 
-* **Immediate / Necessary**
-* **Required**
-* **Normal**
+* Service name
+* Dealership name
+* Customer name
+* Immediacy level
 
-Orders are prioritized according to:
+Orders are maintained using a custom **Max Heap** for each dealership.
 
-1. Urgency level
-2. Submission time
-
-If two orders have the same urgency, the order submitted earlier receives higher priority.
-
-Each dealership maintains its orders using a **Max Heap**, so the highest-priority order is always available at the root.
+The current implementation prioritizes orders based on their **immediacy level**, with higher urgency receiving higher priority.
 
 ## Data Structures
 
-One of the main requirements of the project was to implement the required data structures rather than relying on library implementations.
+A major goal of this project is to implement the required data structures manually rather than relying on ready-made implementations.
 
-### Linked Lists
+### Agency Linked List
 
-Linked lists are used to manage dynamic collections such as:
+Dealerships are stored in a custom singly linked list.
 
-* Dealerships
-* Services
-* Services associated with dealerships
+Each agency node contains:
+
+```text
+AgencyNode
+├── name
+├── PriorityQueue
+└── next
+```
+
+This allows every dealership to maintain its own priority queue of customer orders.
 
 ### Hierarchical Service Structure
 
-Services can contain sub-services recursively, allowing an arbitrary number of hierarchy levels.
+Services are represented using a custom linked structure with two relationships:
 
-Conceptually, the structure can be represented as:
+* `next` — connects services at the same hierarchy level
+* `down` — points to the first sub-service
+
+Conceptually:
 
 ```text
 Service
@@ -91,43 +82,111 @@ Service
 └── Sub-service
 ```
 
-This structure supports operations such as adding sub-services, traversing the hierarchy, and removing unused services.
+This representation supports multiple levels of nested services.
+
+The core node is represented by:
+
+```cpp
+struct ServiceNode
+{
+    bool has_down;
+    data_service_struct data;
+    ServiceNode* next;
+    ServiceNode* down;
+};
+```
 
 ### Max Heap
 
-Each dealership has a priority queue implemented using a **Max Heap**.
+Each dealership owns a custom `PriorityQueue` implemented using a Max Heap.
 
-The heap determines the next order to be processed based on:
+The heap stores customer orders and provides the following operations:
 
-```text
-Higher urgency
-      ↓
-Earlier submission time
-      ↓
-Higher priority
+* `push`
+* `pop`
+* `top`
+* `empty`
+* `size`
+
+The heap uses `std::vector` as its underlying storage, while the heap operations are implemented manually.
+
+The implementation includes:
+
+* Parent calculation
+* Left and right child calculation
+* `heapify_up`
+* `heapify_down`
+
+The highest-immediacy order is maintained at the root of the heap.
+
+## Service Information
+
+Each service stores information such as:
+
+```cpp
+struct data_service_struct
+{
+    string service_name;
+    string car_model;
+    string customer_comments;
+    string agent_comments;
+    vector<string> agencies;
+    int cost;
+};
 ```
 
-When orders are listed and processed, they are removed from the heap in priority order until the queue becomes empty.
+This includes:
 
-## Service Removal Logic
+* Service name
+* Supported vehicle model
+* Customer-facing description
+* Technical description for dealership staff
+* Associated dealerships
+* Service cost
 
-A service can be offered by more than one dealership.
+## Agency-Service Relationship
 
-Therefore, removing a service from one dealership does not necessarily remove the service from the global service hierarchy.
+The system also maintains relationships between dealerships and services.
+
+These relationships are represented using:
+
+```cpp
+struct AgencyServiceNode
+{
+    string service_name;
+    string agency_name;
+};
+```
 
 For example:
 
 ```text
-Dealership A ──┐
-               ├── Tire Services
-Dealership B ──┘
+Agency A ─── Service X
+Agency A ─── Service Y
+Agency B ─── Service X
+Agency B ─── Service Z
 ```
 
-If Dealership A stops offering `Tire Services`, the service remains available because Dealership B still provides it.
+This allows a service to be associated with multiple dealerships.
 
-Only when no dealership offers the relevant service anymore can the service and its dependent sub-services be removed when appropriate.
+## Order Priority
 
-This requirement makes service deletion more than a simple linked-list removal operation and requires maintaining relationships between dealerships and the service hierarchy.
+Each dealership has its own Max Heap:
+
+```text
+Dealership
+     │
+     ▼
+  Max Heap
+     │
+     ├── Order
+     ├── Order
+     └── Order
+```
+
+The order with the highest immediacy level is kept at the root of the heap.
+
+When the order list is requested, orders are repeatedly removed from the heap and displayed until the priority queue becomes empty.
 
 ## Supported Commands
 
@@ -146,8 +205,6 @@ add service <Service_Properties>
 add subservice <Subservice_Name> to <Service_Name>
 
 add offer <Service_Name> to <Agency_Name>
-
-delete <Service_Name> from <Agency_Name>
 ```
 
 ### Query Commands
@@ -168,9 +225,11 @@ order <Service_Name> to <Agency_Name>
 list orders <Agency_Name>
 ```
 
-## Example
+> Service deletion and complete command parsing are planned improvements.
 
-A possible service hierarchy:
+## Example Service Hierarchy
+
+A possible service hierarchy is:
 
 ```text
 Automotive Services
@@ -183,91 +242,11 @@ Automotive Services
     └── Tire Repair
 ```
 
-Suppose a dealership receives the following orders:
-
-```text
-Order 1 → Normal    → 10:05
-Order 2 → Necessary → 10:10
-Order 3 → Necessary → 10:02
-Order 4 → Required  → 10:01
-```
-
-The Max Heap processes them in:
-
-```text
-Order 3
-Order 2
-Order 4
-Order 1
-```
-
-The two `Necessary` orders are ordered by their submission time.
-
-## Design Goals
-
-The project was developed with the following goals:
-
-* Implement core data structures manually
-* Combine multiple data structures to solve a larger problem
-* Model hierarchical relationships between services
-* Maintain relationships between dealerships and services
-* Implement priority-based scheduling
-* Handle insertion, deletion, traversal, and searching operations
-* Provide a simple command-line interface for interacting with the system
-
-## Constraints
-
-The project was intentionally implemented without relying on ready-made implementations of the required data structures.
-
-The core structures, including linked lists, trees, queues, stacks, and heaps where required, are implemented manually.
-
-Arrays and basic array-based structures can be used as supporting structures.
-
-## Technical Concepts
-
-This project demonstrates practical experience with:
-
-* Data Structures
-* Algorithms
-* Linked Lists
-* Trees and hierarchical data
-* Max Heap
-* Priority Queues
-* Recursive traversal
-* Searching
-* Dynamic insertion and deletion
-* Object-oriented design
-* Command-line interfaces
-* Problem decomposition
-
-## Project Structure
-
-```text
-automotive-dealership-management-system/
-│
-├── src/
-│   ├── ...
-│
-├── README.md
-└── ...
-```
-
-The source code is organized around the entities, data structures, and operations required by the system.
-
-## Running the Project
-
-Clone the repository:
-
-```bash
-git clone https://github.com/YOUR_USERNAME/automotive-dealership-management-system.git
-cd automotive-dealership-management-system
-```
-
-Build and run the project according to the language and build system used in this repository.
+The hierarchy is not restricted to a fixed number of levels.
 
 ## Example Workflow
 
-A typical interaction with the system may look like:
+A typical workflow can look like:
 
 ```text
 > add agency Tehran_Agency
@@ -280,24 +259,119 @@ A typical interaction with the system may look like:
 
 > add offer Tire_Services to Tehran_Agency
 
-> order Tire_Replacement to Tehran_Agency by Ali with Necessary
+> order Tire_Repair to Tehran_Agency by Ali with 3
 
-> order Tire_Repair to Tehran_Agency by Sara with Normal
+> order Tire_Replacement to Tehran_Agency by Sara with 1
 
 > list orders Tehran_Agency
 ```
 
-The orders are then processed according to the priority rules implemented by the Max Heap.
+The orders are processed according to their immediacy levels using the Max Heap.
 
-## Possible Future Improvements
+## Design Goals
 
-Potential extensions include:
+The project was developed with the following goals:
 
-* Persistent storage
-* Database integration
-* REST API
-* Graphical or web-based interface
-* Automated unit and integration tests
-* Authentication and role-based access control
-* Performance benchmarking
-* Additional scheduling policies
+* Implement fundamental data structures manually
+* Combine multiple data structures to solve a larger problem
+* Represent hierarchical relationships between services
+* Maintain relationships between dealerships and services
+* Implement priority-based order processing
+* Practice insertion, searching, and traversal
+* Practice command-oriented system design
+
+## Complexity
+
+The core Max Heap operations have the following time complexities:
+
+| Operation | Complexity |
+| --------- | ---------- |
+| `top()`   | O(1)       |
+| `push()`  | O(log n)   |
+| `pop()`   | O(log n)   |
+| `empty()` | O(1)       |
+| `size()`  | O(1)       |
+
+Additional operations:
+
+* Agency lookup: **O(n)** in the worst case
+* Service search: **O(n)** in the worst case, where `n` is the number of service nodes
+
+## Implementation Constraints
+
+The project was designed around the requirement to implement the core data structures manually rather than relying on ready-made data structure implementations.
+
+For example, instead of using:
+
+```cpp
+std::priority_queue
+```
+
+the project implements its own priority queue using a Max Heap.
+
+`std::vector` is used as supporting dynamic storage where permitted by the project requirements.
+
+## Technologies
+
+* **C++**
+* Data Structures & Algorithms
+* Singly Linked Lists
+* Hierarchical Linked Structures
+* Max Heap
+* Priority Queues
+* Dynamic Memory Allocation
+* Pointers
+* STL `vector`
+
+## Project Structure
+
+```text
+automotive-dealership-management-system/
+│
+├── main.cpp
+├── maxheap.cpp
+├── README.md
+└── ...
+```
+
+The source code is organized around the main entities and data structures used by the system.
+
+## Running the Project
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Masoumeh-Ostvar/automotive-dealership-management-system.git
+cd automotive-dealership-management-system
+```
+
+Build and run the project according to the C++ build configuration used in the repository.
+
+For example:
+
+```bash
+g++ main.cpp -o main
+./main
+```
+
+## Future Improvements
+
+Possible improvements include:
+
+* Add order submission timestamps
+* Implement timestamp-based tie-breaking for orders with equal urgency
+* Complete service deletion and cleanup logic
+* Strengthen validation of agency-service relationships
+* Prevent orders for services not offered by a dealership
+* Improve memory management using destructors and RAII
+* Add automated unit and integration tests
+* Separate declarations and implementations into `.h` and `.cpp` files
+* Implement complete command parsing
+* Improve error handling
+* Add performance benchmarking
+
+## Motivation
+
+This project was developed as a practical exercise in **Data Structures and Algorithms**, with an emphasis on understanding how fundamental data structures can be implemented and combined to solve a larger problem.
+
+Rather than relying on high-level implementations from the C++ Standard Library, the project focuses on understanding the underlying mechanisms of linked structures and heap-based priority queues.
